@@ -25,27 +25,20 @@ import com.winlator.star.math.Mathf;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Locale;
 
 public class LogView extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final ArrayList<String> lines = new ArrayList<>();
-    private final ArrayList<Integer> searchMatches = new ArrayList<>();
     private final float rowHeight = UnitUtils.dpToPx(30);
     private final float defaultTextSize = UnitUtils.dpToPx(16);
     private final float minScrollThumbSize = UnitUtils.dpToPx(6);
-    private final float channelStripeWidth = UnitUtils.dpToPx(4);
     private final PointF lastPoint = new PointF();
-    private final PointF downPoint = new PointF();
     private final PointF scrollPosition = new PointF();
     private final PointF scrollSize = new PointF();
     private boolean isActionDown = false;
     private static String fileName;
     private boolean scrollingHorizontally = false;
     private boolean scrollingVertically = false;
-    private int selectedLineIndex = -1;
-    private int currentSearchMatch = -1;
-    private String searchQuery = "";
     private final Object lock = new Object();
 
     public LogView(Context context) {
@@ -103,70 +96,17 @@ public class LogView extends View {
                     continue;
                 }
 
-                boolean selected = i == selectedLineIndex;
-                boolean currentMatch = currentSearchMatch >= 0 && currentSearchMatch < searchMatches.size() && searchMatches.get(currentSearchMatch) == i;
-                boolean searchMatch = searchMatches.contains(i);
-
-                if (selected) paint.setColor(0xffbbdefb);
-                else if (currentMatch) paint.setColor(0xfffff59d);
-                else if (searchMatch) paint.setColor(0xfffff9c4);
-                else paint.setColor((i % 2) != 0 ? 0xffeaf6fb : 0xffffffff);
+                paint.setColor((i % 2) != 0 ? 0xffe1f5fe : 0xffffffff);
                 canvas.drawRect(-scrollPosition.x, rowY, width, rowY + rowHeight, paint);
 
-                paint.setColor(getChannelColor(lines.get(i)));
-                canvas.drawRect(-scrollPosition.x, rowY, -scrollPosition.x + channelStripeWidth, rowY + rowHeight, paint);
-
+                paint.setColor(0xff212121);
                 float centerY = (rowY - paint.ascent()) + (rowHeight - textHeight) * 0.5f;
-                drawLogLine(canvas, lines.get(i), -scrollPosition.x + channelStripeWidth + UnitUtils.dpToPx(6), centerY, searchMatch);
+                canvas.drawText(lines.get(i), -scrollPosition.x, centerY, paint);
                 rowY += rowHeight;
             }
              
             drawScrollThumbs(canvas);
         }
-    }
-
-    private void drawLogLine(Canvas canvas, String line, float x, float y, boolean highlightSearch) {
-        if (!highlightSearch || searchQuery.isEmpty()) {
-            paint.setColor(getChannelColor(line));
-            canvas.drawText(line, x, y, paint);
-            return;
-        }
-
-        String lowerLine = line.toLowerCase(Locale.US);
-        String lowerQuery = searchQuery.toLowerCase(Locale.US);
-        int matchStart = lowerLine.indexOf(lowerQuery);
-        if (matchStart < 0) {
-            paint.setColor(getChannelColor(line));
-            canvas.drawText(line, x, y, paint);
-            return;
-        }
-
-        int matchEnd = matchStart + searchQuery.length();
-        String before = line.substring(0, matchStart);
-        String match = line.substring(matchStart, matchEnd);
-        String after = line.substring(matchEnd);
-        float beforeWidth = paint.measureText(before);
-        float matchWidth = paint.measureText(match);
-
-        paint.setColor(0x99ffeb3b);
-        canvas.drawRect(x + beforeWidth, y + paint.ascent(), x + beforeWidth + matchWidth, y + paint.descent(), paint);
-
-        paint.setColor(getChannelColor(line));
-        canvas.drawText(before, x, y, paint);
-        canvas.drawText(match, x + beforeWidth, y, paint);
-        canvas.drawText(after, x + beforeWidth + matchWidth, y, paint);
-    }
-
-    private int getChannelColor(String line) {
-        String lowerLine = line.toLowerCase(Locale.US);
-        if (lowerLine.contains("err:") || lowerLine.contains("error")) return 0xffb71c1c;
-        if (lowerLine.contains("warn:") || lowerLine.contains("warning")) return 0xffef6c00;
-        if (lowerLine.contains("fixme:")) return 0xff6a1b9a;
-        if (lowerLine.contains("trace:")) return 0xff1565c0;
-        if (lowerLine.contains("box64") || lowerLine.contains("box86")) return 0xff2e7d32;
-        if (lowerLine.contains("x11") || lowerLine.contains("xserver")) return 0xff00838f;
-        if (lowerLine.contains("wine")) return 0xff283593;
-        return 0xff212121;
     }
 
     private void drawScrollThumbs(Canvas canvas) {
@@ -234,9 +174,6 @@ public class LogView extends View {
     public void clear() {
         synchronized (lock) {
             lines.clear();
-            searchMatches.clear();
-            selectedLineIndex = -1;
-            currentSearchMatch = -1;
         }
         postInvalidate();
     }
@@ -245,7 +182,6 @@ public class LogView extends View {
         synchronized (lock) {
             lines.add("["+DateFormat.format("HH:mm:ss", System.currentTimeMillis())+"]  "+line.replace("\n", ""));
             computeScrollSize();
-            computeSearchMatches();
         }
     }
 
@@ -253,61 +189,6 @@ public class LogView extends View {
         synchronized (lock) {
             return String.join("\n", lines);
         }
-    }
-
-    public String getSelectedContent() {
-        synchronized (lock) {
-            if (selectedLineIndex < 0 || selectedLineIndex >= lines.size()) return "";
-            return lines.get(selectedLineIndex);
-        }
-    }
-
-    public void setSearchQuery(String query) {
-        synchronized (lock) {
-            searchQuery = query != null ? query.trim() : "";
-            computeSearchMatches();
-            currentSearchMatch = searchMatches.isEmpty() ? -1 : 0;
-            scrollToCurrentSearchMatch();
-        }
-        postInvalidate();
-    }
-
-    public void findNext() {
-        synchronized (lock) {
-            if (searchMatches.isEmpty()) return;
-            currentSearchMatch = (currentSearchMatch + 1) % searchMatches.size();
-            scrollToCurrentSearchMatch();
-        }
-        postInvalidate();
-    }
-
-    public void findPrevious() {
-        synchronized (lock) {
-            if (searchMatches.isEmpty()) return;
-            currentSearchMatch = currentSearchMatch <= 0 ? searchMatches.size() - 1 : currentSearchMatch - 1;
-            scrollToCurrentSearchMatch();
-        }
-        postInvalidate();
-    }
-
-    private void computeSearchMatches() {
-        searchMatches.clear();
-        if (searchQuery.isEmpty()) return;
-
-        String lowerQuery = searchQuery.toLowerCase(Locale.US);
-        for (int i = 0, count = lines.size(); i < count; i++) {
-            if (lines.get(i).toLowerCase(Locale.US).contains(lowerQuery)) searchMatches.add(i);
-        }
-    }
-
-    private void scrollToCurrentSearchMatch() {
-        if (currentSearchMatch < 0 || currentSearchMatch >= searchMatches.size()) return;
-        int lineIndex = searchMatches.get(currentSearchMatch);
-        scrollPosition.y = Mathf.clamp(lineIndex * rowHeight - rowHeight, 0, getScrollMaxTop());
-    }
-
-    private int getLineIndexAt(float y) {
-        return (int)((y + scrollPosition.y) / rowHeight);
     }
 
     public static void setFilename(String file) {
@@ -339,7 +220,6 @@ public class LogView extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 lastPoint.set(event.getX(), event.getY());
-                downPoint.set(event.getX(), event.getY());
                 isActionDown = true;
                 scrollingHorizontally = false;
                 scrollingVertically = false;
@@ -368,13 +248,6 @@ public class LogView extends View {
                 }
                 break;
             case MotionEvent.ACTION_UP:
-                if (!scrollingHorizontally && !scrollingVertically && Math.abs(event.getX() - downPoint.x) < 10 && Math.abs(event.getY() - downPoint.y) < 10) {
-                    synchronized (lock) {
-                        int lineIndex = getLineIndexAt(event.getY());
-                        selectedLineIndex = lineIndex >= 0 && lineIndex < lines.size() ? lineIndex : -1;
-                    }
-                    invalidate();
-                }
                 DebugDialog.setPaused(false);
                 isActionDown = false;
                 break;
