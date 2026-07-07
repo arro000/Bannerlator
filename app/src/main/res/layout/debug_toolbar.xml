@@ -12,6 +12,13 @@
 
     <ImageButton
         style="@style/ListMenuButton"
+        android:id="@+id/BTCopy"
+        android:src="@drawable/abc_ic_menu_copy_mtrl_am_alpha"
+        android:contentDescription="@string/copy_all_logs"
+        android:layout_marginRight="8dp" />
+
+    <ImageButton
+        style="@style/ListMenuButton"
         android:id="@+id/BTPause"
         android:src="@drawable/icon_pause"
         android:layout_marginRight="8dp" />

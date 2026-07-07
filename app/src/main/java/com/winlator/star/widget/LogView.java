@@ -185,6 +185,12 @@ public class LogView extends View {
         }
     }
 
+    public String getContent() {
+        synchronized (lock) {
+            return String.join("\n", lines);
+        }
+    }
+
     public static void setFilename(String file) {
         fileName = file.substring(0, file.lastIndexOf("."));
     }

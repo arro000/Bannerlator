@@ -288,6 +288,8 @@
     <string name="enable_box64_logs">Enable Box64 logs</string>
     <string name="export">Export</string>
     <string name="logs_exported_to">Logs exported to</string>
+    <string name="copy_all_logs">Copy All</string>
+    <string name="logs_copied">Logs copied to clipboard</string>
     <string name="general">General</string>
     <string name="msg_warning_install_wine">Warning: Installing a new version of Wine is recommended for testing purposes only.</string>
     <string name="startup_selection">Startup Selection</string>

@@ -1,8 +1,11 @@
 package com.winlator.star.contentdialog;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
+
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 
@@ -38,10 +41,12 @@ public class DebugDialog extends ContentDialog implements Callback<String> {
 
         View toolbarView = LayoutInflater.from(context).inflate(R.layout.debug_toolbar, llBottomBarPanel, false);
         toolbarView.findViewById(R.id.BTClear).setOnClickListener((v) -> logView.clear());
+        toolbarView.findViewById(R.id.BTCopy).setOnClickListener((v) -> copyAllLogs(context));
         toolbarView.findViewById(R.id.BTPause).setOnClickListener((v) -> {
             setPaused(!paused);
             ((ImageButton)v).setImageResource(getPaused() ? R.drawable.icon_play : R.drawable.icon_pause);
         });
+
         llBottomBarPanel.addView(toolbarView);
         try {
             writer = new BufferedWriter(new FileWriter(logView.getLogFile(context)));
@@ -62,7 +67,14 @@ public class DebugDialog extends ContentDialog implements Callback<String> {
             throw new RuntimeException(e);
         }
     }
-    
+
+    private void copyAllLogs(Context context) {
+        ClipboardManager clipboardManager = (ClipboardManager)context.getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clipData = ClipData.newPlainText(context.getString(R.string.logs), logView.getContent());
+        clipboardManager.setPrimaryClip(clipData);
+        AppUtils.showToast(context, R.string.logs_copied);
+    }
+
     public static void setPaused(boolean cond) {
         paused = cond;
     }
