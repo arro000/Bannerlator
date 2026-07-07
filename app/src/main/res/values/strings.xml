@@ -288,8 +288,16 @@
     <string name="enable_box64_logs">Enable Box64 logs</string>
     <string name="export">Export</string>
     <string name="logs_exported_to">Logs exported to</string>
+    <string name="clear_logs">Clear Logs</string>
     <string name="copy_all_logs">Copy All</string>
+    <string name="copy_selected_log">Copy Selected</string>
     <string name="logs_copied">Logs copied to clipboard</string>
+    <string name="selected_log_copied">Selected log copied to clipboard</string>
+    <string name="no_log_selected">No log selected</string>
+    <string name="search_logs">Search logs</string>
+    <string name="search_previous">Previous match</string>
+    <string name="search_next">Next match</string>
+    <string name="pause_logs">Pause Logs</string>
     <string name="general">General</string>
     <string name="msg_warning_install_wine">Warning: Installing a new version of Wine is recommended for testing purposes only.</string>
     <string name="startup_selection">Startup Selection</string>
@@ -742,7 +750,6 @@ E.g. <b>META</b> for <i>META key</i>, \n
     <string name="save_backup_format_winlator_sub">Sibling Winlator / WinNative builds</string>
     <string name="save_backup_next">Next</string>
 </resources>
-
 
 
 

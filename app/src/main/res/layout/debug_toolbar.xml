@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:gravity="center_vertical"
     android:orientation="horizontal">
 
     <ImageButton
         style="@style/ListMenuButton"
         android:id="@+id/BTClear"
         android:src="@drawable/icon_remove"
+        android:contentDescription="@string/clear_logs"
         android:layout_marginRight="8dp" />
 
     <ImageButton
@@ -19,8 +21,41 @@
 
     <ImageButton
         style="@style/ListMenuButton"
+        android:id="@+id/BTCopySelected"
+        android:src="@drawable/abc_ic_menu_copy_mtrl_am_alpha"
+        android:contentDescription="@string/copy_selected_log"
+        android:layout_marginRight="8dp" />
+
+    <EditText
+        style="@style/EditText"
+        android:id="@+id/ETSearchLogs"
+        android:layout_width="0dp"
+        android:layout_height="34dp"
+        android:layout_weight="1"
+        android:hint="@string/search_logs"
+        android:imeOptions="actionSearch"
+        android:inputType="text"
+        android:singleLine="true" />
+
+    <ImageButton
+        style="@style/ListMenuButton"
+        android:id="@+id/BTSearchPrevious"
+        android:src="@drawable/icon_back"
+        android:contentDescription="@string/search_previous"
+        android:layout_marginLeft="8dp" />
+
+    <ImageButton
+        style="@style/ListMenuButton"
+        android:id="@+id/BTSearchNext"
+        android:src="@drawable/icon_arrow_right"
+        android:contentDescription="@string/search_next"
+        android:layout_marginRight="8dp" />
+
+    <ImageButton
+        style="@style/ListMenuButton"
         android:id="@+id/BTPause"
         android:src="@drawable/icon_pause"
+        android:contentDescription="@string/pause_logs"
         android:layout_marginRight="8dp" />
 
 </LinearLayout>
