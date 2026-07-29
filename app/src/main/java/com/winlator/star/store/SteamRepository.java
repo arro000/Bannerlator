@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import in.dragonbra.javasteam.enums.EResult;
 import in.dragonbra.javasteam.networking.steam3.ProtocolTypes;
+import in.dragonbra.javasteam.steam.discovery.ServerQuality;
 import in.dragonbra.javasteam.steam.handlers.steamcloud.SteamCloud;
 import in.dragonbra.javasteam.steam.handlers.steamcontent.SteamContent;
 import in.dragonbra.javasteam.steam.handlers.steamuserstats.SteamUserStats;
@@ -656,6 +657,27 @@ public final class SteamRepository {
         if (cb.getResult() != EResult.OK) {
             Log.w(TAG, "Login failed: " + cb.getResult());
             lastSessionStatus = "LoginFailed:" + cb.getResult().name();
+            // Steam uses TryAnotherCM as a redirect, not a credential rejection. Keeping this
+            // connection alive leaves unified auth requests on a CM that will not answer them,
+            // so their JavaSteam AsyncJobs expire with an opaque CancellationException.
+            if (cb.getResult() == EResult.TryAnotherCM && pumping.get() && isLoggedInPrefs()
+                    && steamClient != null && logoffRecoveryAttempts < MAX_LOGOFF_RECOVERY) {
+                logoffRecoveryAttempts++;
+                setStatus(SteamStatus.CONNECTING, "Steam requested another CM");
+                Log.i(TAG, "TryAnotherCM -> rotating CM and retrying token logon (recovery "
+                        + logoffRecoveryAttempts + "/" + MAX_LOGOFF_RECOVERY + ")");
+                if (steamClient.getCurrentEndpoint() != null) {
+                    steamClient.getServers().tryMark(
+                            steamClient.getCurrentEndpoint(), ProtocolTypes.TCP, ServerQuality.BAD);
+                }
+                forceReconnect = true;
+                if (pumpHandler != null) {
+                    pumpHandler.post(() -> { if (steamClient != null) steamClient.disconnect(); });
+                } else {
+                    steamClient.disconnect();
+                }
+                return;
+            }
             // A token-rejection result won't self-heal (user must re-auth) -> SIGNED_OUT; anything
             // else (transient) stays CONNECTING so the pill shows we're still trying.
             String rn = cb.getResult().name();

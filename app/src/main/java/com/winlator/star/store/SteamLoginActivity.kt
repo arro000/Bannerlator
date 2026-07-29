@@ -121,6 +121,7 @@ class SteamLoginActivity : ComponentActivity(), SteamAuthManager.AuthListener {
     }
 
     private fun onLoginClicked() {
+        if (isLoading) return
         val u = username.trim()
         val p = password
         if (u.isEmpty()) { statusText = "Enter your username."; isStatusError = true; return }
